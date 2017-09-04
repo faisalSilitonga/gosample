@@ -2,12 +2,19 @@ package main
 
 import (
 	"flag"
-	"github.com/google/gops/agent"
 	"log"
 	"net/http"
 
+	"github.com/google/gops/agent"
+
+	"fmt"
+
+	"github.com/tokopedia/gosample/bigproject"
+	"github.com/tokopedia/gosample/database"
 	"github.com/tokopedia/gosample/hello"
-	"gopkg.in/tokopedia/grace.v1"
+	"github.com/tokopedia/gosample/product"
+	"github.com/tokopedia/gosample/ws"
+	grace "gopkg.in/paytm/grace.v1"
 	"gopkg.in/tokopedia/logging.v1"
 )
 
@@ -25,10 +32,27 @@ func main() {
 		log.Fatal(err)
 	}
 
+	database.InitDB()
+	database.InitRedis()
+
+	err := database.DBPool.MainDB.Ping()
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	hwm := hello.NewHelloWorldModule()
 
-	http.HandleFunc("/hello", hwm.SayHelloWorld)
+	http.HandleFunc("/hello", hwm.HelloWebService)
+	http.HandleFunc("/getProduct", product.GetProductHandler)
+	http.HandleFunc("/redis/set", database.RedisSetHandler)
+	http.HandleFunc("/redis/get", database.RedisGetHandler)
+	http.HandleFunc("/hellows", ws.HelloWebService)
+	http.Handle("/getOrderDetail", bigproject.CheckRedis(http.HandlerFunc(bigproject.GetOrderDetailHandler)))
+
+	go bigproject.CreateConsumer()
+
 	go logging.StatsLog()
 
 	log.Fatal(grace.Serve(":9000", nil))
+
 }

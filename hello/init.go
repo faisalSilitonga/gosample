@@ -2,10 +2,9 @@ package hello
 
 import (
 	"expvar"
-	"log"
 	"net/http"
 
-	logging "gopkg.in/tokopedia/logging.v1"
+	"fmt"
 )
 
 type ServerConfig struct {
@@ -26,14 +25,14 @@ func NewHelloWorldModule() *HelloWorldModule {
 
 	var cfg Config
 
-	ok := logging.ReadModuleConfig(&cfg, "config", "hello") || logging.ReadModuleConfig(&cfg, "files/etc/gosample", "hello")
-	if !ok {
-		// when the app is run with -e switch, this message will automatically be redirected to the log file specified
-		log.Fatalln("failed to read config")
-	}
+	//ok := logging.ReadModuleConfig(&cfg, "config", "hello") || logging.ReadModuleConfig(&cfg, "files/etc/gosample", "hello")
+	//if !ok {
+	// when the app is run with -e switch, this message will automatically be redirected to the log file specified
+	//	log.Fatalln("failed to read config")
+	//}
 
 	// this message only shows up if app is run with -debug option, so its great for debugging
-	logging.Debug.Println("hello init called", cfg.Server.Name)
+	//logging.Debug.Println("hello init called", cfg.Server.Name)
 
 	return &HelloWorldModule{
 		cfg:       &cfg,
@@ -45,5 +44,18 @@ func NewHelloWorldModule() *HelloWorldModule {
 
 func (hlm *HelloWorldModule) SayHelloWorld(w http.ResponseWriter, r *http.Request) {
 	hlm.stats.Add(1)
-	w.Write([]byte("Hello " + hlm.something))
+	r.ParseForm()
+	for key, val := range r.Form {
+		fmt.Println(key, val)
+	}
+
+	fmt.Println(r.Form)
+	name := r.FormValue("name")
+	w.Write([]byte("Hello " + name))
+}
+
+func (hlm *HelloWorldModule) HelloWebService(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	name := r.FormValue("name")
+	w.Write([]byte("Halo nama saya" + name))
 }
